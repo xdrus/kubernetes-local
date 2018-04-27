@@ -1,0 +1,16 @@
+{
+  "CN": "system:node:node-01",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [
+    {
+      "C": "AU",
+      "L": "Sydney",
+      "O": "system:masters",
+      "OU": "Kubernetes The Hard Way",
+      "ST": "NSW"
+    }
+  ]
+}

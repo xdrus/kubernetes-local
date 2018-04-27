@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-proxy
+  namespace: kube-system
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ''
+  labels:
+    tier: node
+    component: kube-proxy
+spec:
+  hostNetwork: true
+  # Do we want to evict it under any circumstances?
+  # tolerations:
+  #   - operator: Exists
+  #     effect: NoExecute
+  #   - operator: Exists
+  #     effect: NoSchedule
+  containers:
+    - name: kube-proxy
+      image: "k8s.gcr.io/hyperkube:{{KUBE_RELEASE}}"
+      resources:
+        requests:
+          cpu: 200m
+      command:
+        - /bin/sh
+        - '-c'
+        - |
+          exec /usr/local/bin/kube-proxy \
+               --kubeconfig=/etc/kubernetes/kubeconfig \
+               --oom-score-adj=-998 \
+               --proxy-mode=iptables
+          1>>/var/log/kube-apiserver.log 2>&1
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - mountPath: /etc/ssl/certs
+          name: etc-ssl-certs
+          readOnly: true
+        - mountPath: /usr/share/ca-certificates
+          name: usr-ca-certs
+          readOnly: true
+        - mountPath: /var/log
+          name: varlog
+          readOnly: false
+        - mountPath: /etc/kubernetes/
+          name: kubeconfig
+          readOnly: false
+        - mountPath: /run/xtables.lock
+          name: iptableslock
+          readOnly: false
+        - mountPath: /lib/modules
+          name: lib-modules
+          readOnly: true
+  volumes:
+    - name: usr-ca-certs
+      hostPath:
+        path: /usr/share/ca-certificates
+    - name: etc-ssl-certs
+      hostPath:
+        path: /etc/ssl/certs
+    - name: kubeconfig
+      hostPath:
+        path: /etc/kubernetes/
+    - name: varlog
+      hostPath:
+        path: /var/log
+    - name: iptableslock
+      hostPath:
+        path: /run/xtables.lock
+        type: FileOrCreate
+    - name: lib-modules
+      hostPath:
+        path: /lib/modules

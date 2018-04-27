@@ -1,0 +1,3 @@
+.vagrant
+ca/*.pem
+ca/*.csr
