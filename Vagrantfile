@@ -125,7 +125,7 @@ Vagrant.configure("2") do |config|
     node.vm.provision "file", source: "./ca/node-01-key.pem", destination: "/var/tmp/kubernetes/ca/kubelet-key.pem"
 
     # Copy manifests for kube-proxy
-    node.vm.provision "file", source: "./configs/manifests/kube-proxy.yaml", destination: "/var/tmp/kubernetes/manifests/"
+    node.vm.provision "file", source: "./configs/manifests/kube-proxy.yaml", destination: "/var/tmp/kubernetes/manifests/kube-proxy.yaml"
 
     # Copy kubelet template to temporary location
     node.vm.provision "file", source: "./configs/kubelet.service", destination: "/var/tmp/kubernetes/kubelet.service"
