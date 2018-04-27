@@ -73,14 +73,18 @@ Vagrant.configure("2") do |config|
 
   ########### Configure master
   config.vm.define "master", primary: true  do |master|
-    master.vm.provider "virtualbox" do |vb|
-      vb.name  = "master"
-    end
+    # network
     master.vm.network "private_network", ip: "10.100.100.10", virtualbox__intnet: true
     master.vm.network "forwarded_port", guest: 443, host: 6443
 
     # Set hostname
     master.vm.hostname = "master"
+
+    master.vm.provider "virtualbox" do |vb|
+      vb.name  = "master"
+      # enable promiscuous mode on the private network
+      # vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+    end
 
     # copy kubelet certificate to temporary location
     master.vm.provision "file", source: "./ca/master.pem", destination: "/var/tmp/kubernetes/ca/kubelet.pem"
@@ -115,13 +119,17 @@ Vagrant.configure("2") do |config|
 
   ########### Configure node
   config.vm.define "node" do |node|
-    node.vm.provider "virtualbox" do |vb|
-      vb.name  = "node"
-    end
+    # Network
     node.vm.network "private_network", ip: "10.100.100.11", virtualbox__intnet: true
 
     # Set hostname
     node.vm.hostname = "node-01"
+
+    node.vm.provider "virtualbox" do |vb|
+      vb.name  = "node"
+      # enable promiscuous mode on the private network
+      # vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+    end
 
     # copy kubelet certificate to temporary location
     node.vm.provision "file", source: "./ca/node-01.pem", destination: "/var/tmp/kubernetes/ca/kubelet.pem"
@@ -145,8 +153,8 @@ Vagrant.configure("2") do |config|
     # Add route
     node.vm.provision "shell", inline: <<-SHELL
       route add -net #{node_env['POD_CIDR']} gw 10.100.100.10 dev eth1
-      iptables -I FORWARD -s #{node_env['POD_CIDR']} -j ACCEPT
-      iptables -I FORWARD -d #{node_env['POD_CIDR']} -j ACCEPT
+      iptables -I FORWARD -s #{master_env['POD_CIDR']} -j ACCEPT
+      iptables -I FORWARD -d #{master_env['POD_CIDR']} -j ACCEPT
     SHELL
   end
 end
