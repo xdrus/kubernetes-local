@@ -49,18 +49,20 @@ Vagrant.configure("2") do |config|
     "ETCD_REGISTRY"=> "quay.io/coreos/etcd",
     "ETCD_VERSION" => "v3.2",
     "KUBE_RELEASE" => "v1.10.1",
-    "POD_CIDR"     => "", # set on node level
     "CLUSTER"      => "kubenet-test",
     "MASTER_IP"    => "10.100.100.10",
     "NODE_IP"      => "10.100.100.11",
     "CLUSTER_CIDR" => "10.100.100.0/23"
   }
 
-  master_env = common_env
+  master_env = {}
   master_env["POD_CIDR"] = "10.100.102.0/24"
+  master_env.merge! common_env
 
-  node_env = common_env
+  node_env = {}
   node_env["POD_CIDR"] = "10.100.103.0/24"
+  node_env.merge! common_env
+
 
   # copy CA and kube-proxy certificates to temporary location
   config.vm.provision "file", source: "./ca/ca.pem", destination: "/var/tmp/kubernetes/ca/ca.pem"
@@ -76,9 +78,6 @@ Vagrant.configure("2") do |config|
     end
     master.vm.network "private_network", ip: "10.100.100.10", virtualbox__intnet: true
     master.vm.network "forwarded_port", guest: 443, host: 6443
-
-    # POD_CIDR for master
-    common_env["POD_CIDR"]=""
 
     # Set hostname
     master.vm.hostname = "master"
@@ -116,9 +115,6 @@ Vagrant.configure("2") do |config|
 
     # Set hostname
     node.vm.hostname = "node-01"
-
-    # POD_CIDR for node
-    common_env["POD_CIDR"]="10.100.103.0/24"
 
     # copy kubelet certificate to temporary location
     node.vm.provision "file", source: "./ca/node-01.pem", destination: "/var/tmp/kubernetes/ca/kubelet.pem"
