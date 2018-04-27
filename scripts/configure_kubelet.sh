@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -ex
+set -x
 
 INTERNAL_IP=$(ifconfig eth1 | awk '/net / {print $2}')
 
@@ -12,30 +12,9 @@ sed -i "s|{{POD_CIDR}}|$POD_CIDR|g" /etc/systemd/system/kubelet.service
 sed -i "s|{{CLUSTER_CIDR}}|$CLUSTER_CIDR|g" /etc/systemd/system/kubelet.service
 
 
-alias kubectl="docker run --rm --net=host -v /etc/kubernetes/:/etc/kubernetes/ k8s.gcr.io/hyperkube:$KUBE_RELEASE kubectl "
-
-kubectl config set-cluster $CLUSTER \
-  --certificate-authority=/etc/kubernetes/ca/ca.pem \
-  --embed-certs=true \
-  --server=https://$MASTER_IP:6443 \
-  --kubeconfig=/etc/kubernetes/kubeconfig
-
-kubectl config set-credentials system:node:$INTERNAL_IP \
-  --client-certificate=/etc/kubernetes/ca/kubelet.pem \
-  --client-key=/etc/kubernetes/ca/kubelet-key.pem \
-  --embed-certs=true \
-  --kubeconfig=/etc/kubernetes/kubeconfig
-
-kubectl config set-context default \
-  --cluster=$CLUSTER \
-  --user=system:node:$INTERNAL_IP \
-  --kubeconfig=/etc/kubernetes/kubeconfig
-
-kubectl config use-context default --kubeconfig=/etc/kubernetes/kubeconfig
-
 echo "Creating interface cbr0"
-ip link show cbr0
-if [ $? -ne 0 ];
+X=$(ip link show | grep cbr0)
+if [ -z "$X" ];
 then
   iptables -t nat -F
   ip link add cbr0 type bridge
@@ -57,6 +36,27 @@ systemctl daemon-reload
 systemctl enable docker
 systemctl restart docker
 
+# create kube config
+alias kubectl="docker run --rm --net=host -v /etc/kubernetes/:/etc/kubernetes/ k8s.gcr.io/hyperkube:$KUBE_RELEASE kubectl "
+
+kubectl config set-cluster $CLUSTER \
+  --certificate-authority=/etc/kubernetes/ca/ca.pem \
+  --embed-certs=true \
+  --server=https://$MASTER_IP:6443 \
+  --kubeconfig=/etc/kubernetes/kubeconfig
+
+kubectl config set-credentials system:node:$INTERNAL_IP \
+  --client-certificate=/etc/kubernetes/ca/kubelet.pem \
+  --client-key=/etc/kubernetes/ca/kubelet-key.pem \
+  --embed-certs=true \
+  --kubeconfig=/etc/kubernetes/kubeconfig
+
+kubectl config set-context default \
+  --cluster=$CLUSTER \
+  --user=system:node:$INTERNAL_IP \
+  --kubeconfig=/etc/kubernetes/kubeconfig
+
+kubectl config use-context default --kubeconfig=/etc/kubernetes/kubeconfig
 
 # start kubelet
 systemctl enable kubelet
