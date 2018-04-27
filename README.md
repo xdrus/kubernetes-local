@@ -41,7 +41,7 @@ cfssl gencert \
   -ca=ca.pem \
   -ca-key=ca-key.pem \
   -config=ca-config.json \
-  -hostname=master,10.100.100.10 \
+  -hostname=master,10.100.100.10,127.0.0.1 \
   -profile=kubernetes \
   master-csr.json | cfssljson -bare master
 ```
@@ -55,6 +55,16 @@ cfssl gencert \
   -hostname=node-01,10.100.100.11 \
   -profile=kubernetes \
   node-01-csr.json | cfssljson -bare node-01
+```
+
+* Kube proxy
+```
+cfssl gencert \
+  -ca=ca.pem \
+  -ca-key=ca-key.pem \
+  -config=ca-config.json \
+  -profile=kubernetes \
+  kube-proxy-csr.json | cfssljson -bare kube-proxy
 ```
 
 ## Usage
