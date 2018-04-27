@@ -56,11 +56,11 @@ Vagrant.configure("2") do |config|
   }
 
   master_env = {}
-  master_env["POD_CIDR"] = "10.100.102.0/24"
+  master_env["POD_CIDR"] = "10.100.102.0/26"
   master_env.merge! common_env
 
   node_env = {}
-  node_env["POD_CIDR"] = "10.100.103.0/24"
+  node_env["POD_CIDR"] = "10.100.102.64/26"
   node_env.merge! common_env
 
 
@@ -106,7 +106,11 @@ Vagrant.configure("2") do |config|
     master.vm.provision "shell", path: "./scripts/configure_kubelet.sh", env: master_env
 
     # Add route
-    master.vm.provision "shell", inline: "route add -net #{node_env['POD_CIDR']} gw 10.100.100.11 dev eth1"
+    master.vm.provision "shell", inline: <<-SHELL
+      route add -net #{node_env['POD_CIDR']} gw 10.100.100.11 dev eth1
+      iptables -I FORWARD -s #{node_env['POD_CIDR']} -j ACCEPT
+      iptables -I FORWARD -d #{node_env['POD_CIDR']} -j ACCEPT
+    SHELL
   end
 
   ########### Configure node
@@ -139,6 +143,10 @@ Vagrant.configure("2") do |config|
     node.vm.provision "shell", path: "./scripts/configure_kubelet.sh", env: node_env
 
     # Add route
-    node.vm.provision "shell", inline: "route add -net #{master_env['POD_CIDR']} gw 10.100.100.10 dev eth1"
+    node.vm.provision "shell", inline: <<-SHELL
+      route add -net #{node_env['POD_CIDR']} gw 10.100.100.10 dev eth1
+      iptables -I FORWARD -s #{node_env['POD_CIDR']} -j ACCEPT
+      iptables -I FORWARD -d #{node_env['POD_CIDR']} -j ACCEPT
+    SHELL
   end
 end
