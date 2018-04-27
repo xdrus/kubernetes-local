@@ -104,6 +104,9 @@ Vagrant.configure("2") do |config|
 
     # Configure and run kubelet
     master.vm.provision "shell", path: "./scripts/configure_kubelet.sh", env: master_env
+
+    # Add route
+    master.vm.provision "shell", inline: "route add -net #{node_env['POD_CIDR']} gw 10.100.100.11 dev eth1"
   end
 
   ########### Configure node
@@ -134,5 +137,8 @@ Vagrant.configure("2") do |config|
 
     # Configure and run kubelet
     node.vm.provision "shell", path: "./scripts/configure_kubelet.sh", env: node_env
+
+    # Add route
+    node.vm.provision "shell", inline: "route add -net #{master_env['POD_CIDR']} gw 10.100.100.10 dev eth1"
   end
 end

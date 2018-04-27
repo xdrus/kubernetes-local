@@ -34,9 +34,14 @@ kubectl config set-context default \
 kubectl config use-context default --kubeconfig=/etc/kubernetes/kubeconfig
 
 echo "Creating interface cbr0"
-ip link add cbr0 type bridge
-ip addr add $POD_CIDR dev cbr0
-ip link set cbr0 up
+ip link show cbr0
+if [ $? -ne 0 ];
+then
+  iptables -t nat -F
+  ip link add cbr0 type bridge
+  ip addr add $POD_CIDR dev cbr0
+  ip link set cbr0 up
+fi
 
 cat > /etc/docker/daemon.json <<EOF
 {
