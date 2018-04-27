@@ -152,7 +152,7 @@ Vagrant.configure("2") do |config|
 
     # Add route
     node.vm.provision "shell", inline: <<-SHELL
-      route add -net #{node_env['POD_CIDR']} gw 10.100.100.10 dev eth1
+      route add -net #{master_env['POD_CIDR']} gw 10.100.100.10 dev eth1
       iptables -I FORWARD -s #{master_env['POD_CIDR']} -j ACCEPT
       iptables -I FORWARD -d #{master_env['POD_CIDR']} -j ACCEPT
     SHELL
