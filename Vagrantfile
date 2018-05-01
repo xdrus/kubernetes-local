@@ -52,7 +52,8 @@ Vagrant.configure("2") do |config|
     "CLUSTER"      => "kubenet-test",
     "MASTER_IP"    => "10.100.100.10",
     "NODE_IP"      => "10.100.100.11",
-    "CLUSTER_CIDR" => "10.100.100.0/23"
+    "CLUSTER_CIDR" => "10.100.102.0/24", # POD CIDR across all nodes
+    "NODES_CIDR"   => "10.100.100.24"    # Subnet for nodes
   }
 
   master_env = {}
@@ -108,8 +109,10 @@ Vagrant.configure("2") do |config|
     # Add route
     master.vm.provision "shell", inline: <<-SHELL
       route add -net #{node_env['POD_CIDR']} gw 10.100.100.11 dev eth1
-      iptables -I FORWARD -s #{node_env['POD_CIDR']} -j ACCEPT
-      iptables -I FORWARD -d #{node_env['POD_CIDR']} -j ACCEPT
+      iptables -I FORWARD -s #{node_env['CLUSTER_CIDR']} -j ACCEPT
+      iptables -I FORWARD -d #{node_env['CLUSTER_CIDR']} -j ACCEPT
+      iptables -I FORWARD -s #{node_env['NODES_CIDR']} -j ACCEPT
+      iptables -I FORWARD -d #{node_env['NODES_CIDR']} -j ACCEPT
     SHELL
   end
 
@@ -145,8 +148,10 @@ Vagrant.configure("2") do |config|
     # Add route
     node.vm.provision "shell", inline: <<-SHELL
       route add -net #{master_env['POD_CIDR']} gw 10.100.100.10 dev eth1
-      iptables -I FORWARD -s #{node_env['POD_CIDR']} -j ACCEPT
-      iptables -I FORWARD -d #{node_env['POD_CIDR']} -j ACCEPT
+      iptables -I FORWARD -s #{node_env['CLUSTER_CIDR']} -j ACCEPT
+      iptables -I FORWARD -d #{node_env['CLUSTER_CIDR']} -j ACCEPT
+      iptables -I FORWARD -s #{node_env['NODES_CIDR']} -j ACCEPT
+      iptables -I FORWARD -d #{node_env['NODES_CIDR']} -j ACCEPT
     SHELL
   end
 end
